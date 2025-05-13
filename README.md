@@ -20,4 +20,4 @@ A simple and responsive weather application built using HTML, CSS, and JavaScrip
 
 ### Developed by: Mohd Shahid
 
-#### Project link: github.com/sonu16/weatherApp.git
+#### Project link: (https://github.com/sonu16/weatherApp.git)
