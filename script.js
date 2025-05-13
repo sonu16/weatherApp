@@ -1,3 +1,6 @@
+// Description: This script handles the weather application functionality, including fetching weather data from OpenWeatherMap API, displaying current and forecasted weather, and managing a search history of cities.
+// It also includes a dropdown for previously searched cities and allows users to click on them to quickly search again.
+// DOM elements and API key
 const citySearch = document.getElementById("city-search");
 const searchButton = document.getElementById("search-btn");
 const locationButton = document.getElementById("location-btn");
@@ -6,8 +9,70 @@ const weatherCardsDiv = document.getElementById("weather-cards");
 const dropList = document.getElementById("drop_list");
 const dropListCities = document.getElementById("dropList_cities");
 const API_KEY = "0b436591990a0da4a6a3e4a3148c9f7c";
-  
 
+// Load saved cities from localStorage
+const savedCities = JSON.parse(localStorage.getItem("citySearchHistory")) || [];
+
+// Function to render saved cities in the dropdown
+const renderSavedCities = () => {
+    dropListCities.innerHTML = ""; // Clear the list
+    savedCities.forEach(city => {
+        const li = document.createElement("li");
+        li.textContent = city;
+        li.className = "cursor-pointer px-2 py-1 hover:bg-gray-200";
+        li.addEventListener("click", () => {
+            citySearch.value = city; // Set clicked city to input
+            dropList.classList.add("hidden"); // Hide dropdown
+        });
+        dropListCities.appendChild(li);
+    });
+};
+
+// Show dropdown when input is focused
+citySearch.addEventListener("focus", () => {
+    if (savedCities.length > 0) {
+        dropList.classList.remove("hidden");
+    }
+});
+
+// Hide dropdown when clicking outside
+document.addEventListener("click", (e) => {
+    if (!dropList.contains(e.target) && e.target !== citySearch) {
+        dropList.classList.add("hidden");
+    }
+});
+
+// Save city to history and update dropdown
+const saveCity = (city) => {
+    if (city && !savedCities.includes(city)) {
+        savedCities.push(city);
+        localStorage.setItem("citySearchHistory", JSON.stringify(savedCities));
+        renderSavedCities();
+    }
+};
+
+// Update the getCityCoordinates function to save the searched city
+const getCityCoordinates = () => {
+    const cityName = citySearch.value.trim();
+    if (cityName === "") return;
+    saveCity(cityName); // Save the city to history
+    const API_URL = `https://api.openweathermap.org/geo/1.0/direct?q=${cityName}&limit=1&appid=${API_KEY}`;
+    fetch(API_URL)
+        .then(response => response.json())
+        .then(data => {
+            if (!data.length) return alert(`No coordinates found for ${cityName}`);
+            const { lat, lon, name } = data[0];
+            getWeatherDetails(name, lat, lon);
+        })
+        .catch(() => {
+            alert("An error occurred while fetching the coordinates!");
+        });
+};
+
+// Initial render of saved cities
+renderSavedCities();
+
+// Functions to create weather cards and display weather details
 const createWeatherCard = (cityName, weatherItem, index) => {
     if (index === 0) {
         return `<div class="details w-full flex flex-col items-center justify-center gap-1 mt-4 bg-blue-200 text-slate-900 rounded-lg py-2 px-4 shadow-lg shadow-black mb-6">
@@ -63,22 +128,6 @@ const getWeatherDetails = (cityName, latitude, longitude) => {
         });
 };
 
-const getCityCoordinates = () => {
-    const cityName = citySearch.value.trim();
-    if (cityName === "") return;
-    const API_URL = `https://api.openweathermap.org/geo/1.0/direct?q=${cityName}&limit=1&appid=${API_KEY}`;
-    fetch(API_URL)
-        .then(response => response.json())
-        .then(data => {
-            if (!data.length) return alert(`No coordinates found for ${cityName}`);
-            const { lat, lon, name } = data[0];
-            getWeatherDetails(name, lat, lon);
-        })
-        .catch(() => {
-            alert("An error occurred while fetching the coordinates!");
-        });
-};
-
 const getUserCoordinates = () => {
     navigator.geolocation.getCurrentPosition(
         position => {
@@ -107,3 +156,5 @@ const getUserCoordinates = () => {
 locationButton.addEventListener("click", getUserCoordinates);
 searchButton.addEventListener("click", getCityCoordinates);
 citySearch.addEventListener("keyup", e => e.key === "Enter" && getCityCoordinates());
+
+
